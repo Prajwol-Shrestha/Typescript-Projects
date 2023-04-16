@@ -1,6 +1,7 @@
 [
     {
         "projectName": "Color Generator",
-        "description": "Color Saturation Generator"
+        "description": "Color Saturation Generator",
+        "ComponentName": "ColorGenerator"
     }
 ]

@@ -1,0 +1,24 @@
+.heading_container{
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2em;
+}
+
+.input_container{
+    display: flex;
+}
+
+.colors_container{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 15em);
+    grid-auto-rows: auto;
+    align-items: center;
+    gap: 1em;
+}
+
+.color_card{
+    padding: 1em;
+    height: 150px;
+    cursor: pointer;
+}
