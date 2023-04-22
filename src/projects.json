@@ -3,5 +3,10 @@
         "projectName": "Color Generator",
         "description": "Color Saturation Generator",
         "ComponentName": "ColorGenerator"
+    },
+    {
+        "projectName": "Quiz",
+        "description": "Quiz App",
+        "ComponentName": "Quiz"
     }
 ]
