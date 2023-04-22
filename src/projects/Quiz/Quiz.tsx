@@ -2,21 +2,24 @@ import React, { useEffect, useState, useMemo, useRef } from 'react'
 import quizStyle from './quiz.module.css'
 import getRequest, { QuizResponse } from '../../utils/getRequest'
 import shuffleArray from '../../utils/shuffleArray'
+import { quizUrl } from '../../urls/url'
 
 
-let url = 'https://opentdb.com/api.php?amount=20&category=31&type=multiple'
 
 export default function Quiz() {
-    const [quizData, setQuizData] = useState<QuizResponse['results']>([]);
-    const [loading, setLoading] = useState<Boolean>(true)
-    const [error, setError] = useState<Boolean>(false)
+    const [value, setValue] = useState(0)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(false)
+    const [retakeQuiz, setRetakeQuiz] = useState(false)
     const [quizNum, setQuizNum] = useState(0)
-    const [hasSelected, setHasSelected] = useState<Boolean>(false)
+    const [hasSelected, setHasSelected] = useState(false)
+    const [quizData, setQuizData] = useState<QuizResponse['results']>([]);
     const optionsRef = useRef<HTMLDivElement>(null)
-
+    
     // memorizing the function so it doesn't fetch data twice
-    const fetchQuizData = useMemo(() => getRequest(url), []);
-
+    const fetchQuizData = useMemo(() => getRequest(quizUrl), [retakeQuiz]);
+    
+    
     useEffect(() => {
         fetchQuizData.then((data) => {
             if(data.response_code === 0){
@@ -31,7 +34,7 @@ export default function Quiz() {
             }
             setLoading(false);
         });
-    }, [fetchQuizData]);
+    }, [retakeQuiz]);
 
 
     function nextQuestion() {
@@ -41,6 +44,8 @@ export default function Quiz() {
             setQuizNum(prevNum => prevNum + 1)
             return
         }
+        setValue(2)
+        return
     }
 
     // reset the success and error class on optionsContainer childrens
@@ -53,6 +58,12 @@ export default function Quiz() {
         }
     }
 
+    function retake(){
+        setValue(1)
+        setRetakeQuiz(true)
+        setQuizNum(0)
+    }
+
     
 
     function selectAnswer(e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) {
@@ -62,7 +73,7 @@ export default function Quiz() {
         // making it true here so it skips the check first time selectAnswer is called
         setHasSelected(true)
         const element = e.target as HTMLDivElement
-        if (element.innerText === quizData[quizNum].correct_answer) {
+        if (element.innerHTML === quizData[quizNum].correct_answer) {
             element.classList.add('success')
             return
         }
@@ -72,7 +83,7 @@ export default function Quiz() {
         if (optionsRef.current) {
             const childs = (optionsRef.current as HTMLDivElement).children
             Array.from(childs).forEach(element => {
-                if((element as HTMLDivElement).innerText === quizData[quizNum].correct_answer){
+                if((element as HTMLDivElement).innerHTML === quizData[quizNum].correct_answer){
                     setTimeout(() => {
                         element.classList.add('success')
                     }, 100)
@@ -82,16 +93,39 @@ export default function Quiz() {
         return
     }
 
+    function StartQuiz(){
+        return (
+            <div className='btn-container'>
+                <button className='btn' onClick={() => setValue(1)}> Start Quiz </button>
+            </div>
+        )
+    }
 
+    function RetakeQuiz(){
+        return (
+            <div className='btn-container'>
+                <button className='btn' onClick={() => retake()}> Retake Quiz </button>
+            </div>
+        )
+    }
+
+    // Note: !! makes number to boolean 0 === false and other === true
 
     return (
         <section className='container'>
             <h1 className={quizStyle.heading}> Quiz App </h1>
-            {loading && <div className='loading'> Loading... </div>}
+            { value === 1 && loading && <div className='loading'> Loading... </div>}
 
-            { error && <div> Failed to fetch data! </div> }
+            {value === 1 &&  error && <div> Failed to fetch data! </div> }
 
-            {!loading && !error &&
+            { !value &&
+                <StartQuiz />
+            }
+            { value === 2 &&
+                <RetakeQuiz />
+            }
+
+            {value === 1 && !loading && !error &&
                 <div className={quizStyle.card_container}>
                     <div className={quizStyle.card_header}>
                         <span>{quizNum + 1}</span>

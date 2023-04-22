@@ -1,0 +1,1 @@
+export const quizUrl =  'https://opentdb.com/api.php?amount=20&category=31&type=multiple'
