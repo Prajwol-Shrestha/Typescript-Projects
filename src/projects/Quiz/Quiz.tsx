@@ -9,21 +9,26 @@ let url = 'https://opentdb.com/api.php?amount=20&category=31&type=multiple'
 export default function Quiz() {
     const [quizData, setQuizData] = useState<QuizResponse['results']>([]);
     const [loading, setLoading] = useState<Boolean>(true)
+    const [error, setError] = useState<Boolean>(false)
     const [quizNum, setQuizNum] = useState(0)
-    const [hasSelected, setHasSelected] = useState<boolean>(false)
-    const optionsRef = useRef(null)
+    const [hasSelected, setHasSelected] = useState<Boolean>(false)
+    const optionsRef = useRef<HTMLDivElement>(null)
 
     // memorizing the function so it doesn't fetch data twice
     const fetchQuizData = useMemo(() => getRequest(url), []);
 
     useEffect(() => {
         fetchQuizData.then((data) => {
-            setQuizData(data.results.map(obj => {
-                return {
-                    ...obj,
-                    options: shuffleArray([obj.correct_answer, obj.incorrect_answers].flat())
-                }
-            }));
+            if(data.response_code === 0){
+                setQuizData(data.results.map(obj => {
+                    return {
+                        ...obj,
+                        options: shuffleArray([obj.correct_answer, obj.incorrect_answers].flat())
+                    }
+                }));
+            } else {
+                setError(true)
+            }
             setLoading(false);
         });
     }, [fetchQuizData]);
@@ -84,15 +89,17 @@ export default function Quiz() {
             <h1 className={quizStyle.heading}> Quiz App </h1>
             {loading && <div className='loading'> Loading... </div>}
 
-            {!loading &&
+            { error && <div> Failed to fetch data! </div> }
+
+            {!loading && !error &&
                 <div className={quizStyle.card_container}>
                     <div className={quizStyle.card_header}>
                         <span>{quizNum + 1}</span>
                         <h3 className={quizStyle.title} dangerouslySetInnerHTML={{ __html: quizData[quizNum].question }}></h3>
                     </div>
                     <div className={quizStyle.options_container} ref={optionsRef}>
-                        {quizData[quizNum].options.map((opt, indx) => (
-                            <div key={indx} data-index={indx} className={quizStyle.option} dangerouslySetInnerHTML={{ __html: opt }} onClick={selectAnswer}></div>
+                        {quizData[quizNum].options.map((opt, index) => (
+                            <div key={index} data-index={index} className={quizStyle.option} dangerouslySetInnerHTML={{ __html: opt }} onClick={selectAnswer}></div>
                         ))}
                     </div>
                     <div className='btn-container'>

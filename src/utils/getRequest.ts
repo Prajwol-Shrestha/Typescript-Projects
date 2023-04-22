@@ -11,8 +11,13 @@ export type QuizResponse = {
     }[]
 }
 
-export default async function getRequest(url: string): Promise<QuizResponse> {
-    const response = await fetch(url)
-    const data = await response.json() as QuizResponse
-    return data
+export default async function getRequest(url: string): (Promise<QuizResponse>){
+    try{
+        const response = await fetch(url)
+        const data = await response.json() as QuizResponse
+        return data
+    } catch (error){
+        console.error(error);
+        throw new Error('Failed to fetch data')
+    }
 }
