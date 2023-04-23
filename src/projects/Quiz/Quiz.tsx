@@ -2,39 +2,19 @@ import React, { useEffect, useState, useMemo, useRef } from 'react'
 import quizStyle from './quiz.module.css'
 import getRequest, { QuizResponse } from '../../utils/getRequest'
 import shuffleArray from '../../utils/shuffleArray'
-import { quizUrl } from '../../urls/url'
+import { contructQuizUrl } from '../../urls/url'
 
 
 
-export default function Quiz() {
+export default function Quiz(): JSX.Element {
     const [value, setValue] = useState(0)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(false)
-    const [retakeQuiz, setRetakeQuiz] = useState(false)
     const [quizNum, setQuizNum] = useState(0)
     const [hasSelected, setHasSelected] = useState(false)
     const [quizData, setQuizData] = useState<QuizResponse['results']>([]);
     const optionsRef = useRef<HTMLDivElement>(null)
-    
-    // memorizing the function so it doesn't fetch data twice
-    const fetchQuizData = useMemo(() => getRequest(quizUrl), [retakeQuiz]);
-    
-    
-    useEffect(() => {
-        fetchQuizData.then((data) => {
-            if(data.response_code === 0){
-                setQuizData(data.results.map(obj => {
-                    return {
-                        ...obj,
-                        options: shuffleArray([obj.correct_answer, obj.incorrect_answers].flat())
-                    }
-                }));
-            } else {
-                setError(true)
-            }
-            setLoading(false);
-        });
-    }, [retakeQuiz]);
+    const [formData, setFormData] = useState({ questionQty: 10, difficulty: 'any' })
 
 
     function nextQuestion() {
@@ -44,7 +24,8 @@ export default function Quiz() {
             setQuizNum(prevNum => prevNum + 1)
             return
         }
-        setValue(2)
+        setValue(0)
+        setQuizNum(0)
         return
     }
 
@@ -58,22 +39,16 @@ export default function Quiz() {
         }
     }
 
-    function retake(){
-        setValue(1)
-        setRetakeQuiz(true)
-        setQuizNum(0)
-    }
 
-    
 
     function selectAnswer(e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) {
-        if(hasSelected){
+        if (hasSelected) {
             return
         }
         // making it true here so it skips the check first time selectAnswer is called
         setHasSelected(true)
         const element = e.target as HTMLDivElement
-        if (element.innerHTML === quizData[quizNum].correct_answer) {
+        if (element.textContent === quizData[quizNum].correct_answer) {
             element.classList.add('success')
             return
         }
@@ -83,7 +58,7 @@ export default function Quiz() {
         if (optionsRef.current) {
             const childs = (optionsRef.current as HTMLDivElement).children
             Array.from(childs).forEach(element => {
-                if((element as HTMLDivElement).innerHTML === quizData[quizNum].correct_answer){
+                if ((element as HTMLDivElement).textContent === quizData[quizNum].correct_answer) {
                     setTimeout(() => {
                         element.classList.add('success')
                     }, 100)
@@ -93,36 +68,69 @@ export default function Quiz() {
         return
     }
 
-    function StartQuiz(){
+    function startQuiz() {
+        const url = contructQuizUrl(formData.questionQty, formData.difficulty)
+        setLoading(true)
+        getRequest(url).then((data) => {
+            if (data.response_code === 0) {
+                setQuizData(data.results.map(obj => {
+                    return {
+                        ...obj,
+                        options: shuffleArray([obj.correct_answer, obj.incorrect_answers].flat())
+                    }
+                }));
+            } else {
+                setError(true)
+            }
+            setLoading(false);
+        });
+        setValue(1)
+    }
+
+    function StartQuiz(): JSX.Element {
         return (
-            <div className='btn-container'>
-                <button className='btn' onClick={() => setValue(1)}> Start Quiz </button>
+            <div className={quizStyle.quiz_start_container}>
+                <form className={quizStyle.quiz_form}>
+                    <div>
+                        <label>
+                            Number of Questions:
+                        </label>
+                        <input type='number' max={50} min={1}
+                            onChange={(e) => setFormData({ ...formData, questionQty: parseInt(e.target.value) })}
+                            value={formData.questionQty} />
+                    </div>
+                    <div>
+                        <label>
+                            Difficulty
+                        </label>
+                        <select onBlur={(e) => setFormData({ ...formData, difficulty: e.target.value })}>
+                            <option> Any </option>
+                            <option> Easy </option>
+                            <option> Medium </option>
+                            <option> Hard </option>
+                        </select>
+                    </div>
+                </form>
+                <div className='btn-container'>
+                    <button className='btn' onClick={startQuiz}> Start Quiz </button>
+                </div>
             </div>
         )
     }
 
-    function RetakeQuiz(){
-        return (
-            <div className='btn-container'>
-                <button className='btn' onClick={() => retake()}> Retake Quiz </button>
-            </div>
-        )
-    }
+
 
     // Note: !! makes number to boolean 0 === false and other === true
 
     return (
         <section className='container'>
-            <h1 className={quizStyle.heading}> Quiz App </h1>
-            { value === 1 && loading && <div className='loading'> Loading... </div>}
+            <h1 className={quizStyle.heading}> Anime/Manga Quiz App </h1>
+            {!!value && loading && <div className='loading'> Loading... </div>}
 
-            {value === 1 &&  error && <div> Failed to fetch data! </div> }
+            {!!value && error && <div> Failed to fetch data! </div>}
 
-            { !value &&
+            {!value &&
                 <StartQuiz />
-            }
-            { value === 2 &&
-                <RetakeQuiz />
             }
 
             {value === 1 && !loading && !error &&
@@ -137,7 +145,7 @@ export default function Quiz() {
                         ))}
                     </div>
                     <div className='btn-container'>
-                        <button className='btn' style={{ width: '100%' }} onClick={nextQuestion}> {quizNum === quizData.length - 1 ? 'Finish' : 'Next Question'} </button>
+                        <button className='btn' style={{ width: '100%' }} disabled={!hasSelected} onClick={nextQuestion}> {quizNum === quizData.length - 1 ? 'Finish' : 'Next Question'} </button>
                     </div>
                 </div>
             }
