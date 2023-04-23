@@ -57,7 +57,7 @@ export default function ColorGenerator() {
         <form onSubmit={handleSubmit}>
           <div className={colorGeneratorStyles.input_container} >
             <input type='text' className='input-field' ref={inputRef} style={{ border: error && '0.5px solid red' }} defaultValue='#535bf2'/>
-            <button className='btn' onClick={handleSubmit} > Submit </button>
+            <button className='btn' type='submit' > Submit </button>
           </div>
         </form>
       </div>
